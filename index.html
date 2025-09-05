@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="url"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .qr-result {
+            margin-top: 2rem;
+        }
+
+        #qrcode {
+            display: inline-block;
+            margin: 1rem 0;
+        }
+
+        .download-btn {
+            background: #28a745;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .error {
+            color: #dc3545;
+            margin-top: 1rem;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Code Generator</h1>
+        <div class="input-group">
+            <input 
+                type="url" 
+                id="urlInput" 
+                placeholder="Enter your URL here..."
+                autocomplete="url"
+            >
+        </div>
+        <button onclick="generateQR()" id="generateBtn">Generate QR Code</button>
+        
+        <div class="qr-result">
+            <div id="qrcode"></div>
+            <div id="error" class="error"></div>
+            <button onclick="downloadQR()" id="downloadBtn" class="download-btn">Download QR Code</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+    <script>
+        let currentQRDataURL = null;
+
+        function generateQR() {
+            const urlInput = document.getElementById('urlInput');
+            const qrcodeDiv = document.getElementById('qrcode');
+            const errorDiv = document.getElementById('error');
+            const generateBtn = document.getElementById('generateBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showError('Please enter a URL');
+                return;
+            }
+
+            if (!isValidURL(url)) {
+                showError('Please enter a valid URL');
+                return;
+            }
+
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+            errorDiv.textContent = '';
+            qrcodeDiv.innerHTML = '';
+            downloadBtn.style.display = 'none';
+
+            try {
+                const qr = new QRious({
+                    value: url,
+                    size: 200,
+                    background: '#ffffff',
+                    foreground: '#000000'
+                });
+
+                const img = document.createElement('img');
+                img.src = qr.toDataURL();
+                img.alt = 'QR Code';
+                img.style.border = '1px solid #ddd';
+                img.style.borderRadius = '5px';
+                
+                qrcodeDiv.appendChild(img);
+                currentQRDataURL = qr.toDataURL();
+                
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate QR Code';
+                downloadBtn.style.display = 'inline-block';
+            } catch (error) {
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate QR Code';
+                console.error('QR Code generation error:', error);
+                showError('Failed to generate QR code: ' + error.message);
+            }
+        }
+
+        function downloadQR() {
+            if (!currentQRDataURL) return;
+            
+            const link = document.createElement('a');
+            link.download = 'qrcode.png';
+            link.href = currentQRDataURL;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function showError(message) {
+            document.getElementById('error').textContent = message;
+        }
+
+        function isValidURL(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                generateQR();
+            }
+        });
+
+        document.getElementById('urlInput').addEventListener('input', function() {
+            document.getElementById('error').textContent = '';
+        });
+    </script>
+</body>
+</html>
